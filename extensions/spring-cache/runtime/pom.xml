@@ -45,6 +45,10 @@
                             <goal>compile</goal>
                         </goals>
                         <configuration>
+                            <!-- override compiler args as default sets proc=none -->
+                            <compilerArgs>
+                                <arg>-Xlint:unchecked</arg>
+                            </compilerArgs>
                             <annotationProcessorPaths>
                                 <path>
                                     <groupId>io.quarkus</groupId>
@@ -59,5 +63,5 @@
         </plugins>
     </build>
 
-    
+
 </project>

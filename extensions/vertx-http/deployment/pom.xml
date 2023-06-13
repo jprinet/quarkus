@@ -33,7 +33,7 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-kubernetes-spi</artifactId>
         </dependency>
-        
+
         <!-- Dev UI -->
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -47,7 +47,7 @@
             <groupId>org.mvnpm</groupId>
             <artifactId>importmap</artifactId>
         </dependency>
-        
+
         <!-- Used for the dev console. Note that there is no corresponding runtime dependency -->
         <dependency>
             <groupId>io.quarkus.qute</groupId>
@@ -173,6 +173,10 @@
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <!-- override compiler args as default sets proc=none -->
+                    <compilerArgs>
+                        <arg>-Xlint:unchecked</arg>
+                    </compilerArgs>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>io.quarkus</groupId>
@@ -187,7 +191,7 @@
                 <groupId>de.thetaphi</groupId>
                 <artifactId>forbiddenapis</artifactId>
             </plugin>
-            
+
             <!-- So we don't have to keep a version of these javascript libs in our repo -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

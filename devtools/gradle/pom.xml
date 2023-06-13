@@ -68,7 +68,6 @@
                                 <configuration>
                                     <executable>${gradle.executable}</executable>
                                     <arguments>
-                                        <argument>clean</argument>
                                         <argument>${gradle.task}</argument>
                                         <argument>-Pdescription=${project.description}</argument>
                                         <argument>-Dmaven.repo.local=${settings.localRepository}</argument>

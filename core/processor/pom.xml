@@ -45,21 +45,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.logmanager</groupId> 
-            <artifactId>jboss-logmanager-embedded</artifactId> 
-            <scope>test</scope> 
+            <groupId>org.jboss.logmanager</groupId>
+            <artifactId>jboss-logmanager-embedded</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <compilerArgument>-proc:none</compilerArgument>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 
 </project>
