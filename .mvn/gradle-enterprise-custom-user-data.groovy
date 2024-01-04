@@ -1,3 +1,5 @@
+println('DEBUGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG')
+println(gradleEnterprise.getStorageDirectory())
 
 // Configure build scan publication
 boolean publish = true
@@ -11,7 +13,19 @@ if(session?.getRequest()?.getBaseDirectory() != null) {
     publish = testBuildPaths.every {testBuildPath -> !session.getRequest().getBaseDirectory().contains(testBuildPath) }
     if(!publish) {
         // do not publish a build scan for test builds
-        log.debug("Disabling build scan publication for " + session.getRequest().getBaseDirectory())
+        log.info("Disabling build scan publication for " + session.getRequest().getBaseDirectory())
+
+        // change storage location on CI to avoid Develocity scan dumps with disabled publication to be captured
+        if (System.env.GITHUB_ACTIONS) {
+            try {
+                def storageLocationTmpDir = java.nio.file.Files.createTempDirectory(Paths.get(System.env.RUNNER_TEMP), "buildScanTmp").toAbsolutePath();
+                println('DEBUGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG')
+                println('Update storage location to ' + storageLocationTmpDir)
+                gradleEnterprise.setStorageDirectory(storageLocationTmpDir)
+            } catch (IOException e) {
+                log.error('Temporary storage location directory cannot be created, the Build Scan will be published', e)
+            }
+        }
     }
 }
 buildScan.publishAlwaysIf(publish)
