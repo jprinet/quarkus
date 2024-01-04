@@ -18,7 +18,7 @@ if(session?.getRequest()?.getBaseDirectory() != null) {
         // change storage location on CI to avoid Develocity scan dumps with disabled publication to be captured
         if (System.env.GITHUB_ACTIONS) {
             try {
-                def storageLocationTmpDir = java.nio.file.Files.createTempDirectory(Paths.get(System.env.RUNNER_TEMP), "buildScanTmp").toAbsolutePath();
+                def storageLocationTmpDir = java.nio.file.Files.createTempDirectory(java.nio.file.Paths.get(System.env.RUNNER_TEMP), "buildScanTmp").toAbsolutePath();
                 println('DEBUGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG')
                 println('Update storage location to ' + storageLocationTmpDir)
                 gradleEnterprise.setStorageDirectory(storageLocationTmpDir)
