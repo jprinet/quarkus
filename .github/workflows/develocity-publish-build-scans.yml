@@ -11,7 +11,6 @@ defaults:
 
 jobs:
   publish-build-scans:
-    if: github.repository == 'quarkusio/quarkus' && github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion != 'cancelled'
     runs-on: ubuntu-latest
     permissions:
       actions: write
@@ -24,7 +23,7 @@ jobs:
         id: publish
         uses: gradle/github-actions/maven-build-scan-publish@v0.2
         with:
-          develocity-url: 'https://ge.quarkus.io'
+          develocity-url: 'https://ge.solutions-team.gradle'
           develocity-access-key: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
           skip-comment: true
           skip-summary: true
