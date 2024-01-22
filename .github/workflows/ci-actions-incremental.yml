@@ -442,6 +442,9 @@ jobs:
           wrapper-init: true
       - name: Build
         env:
+          MAVEN_OPTS: >-
+            ${{ env.MAVEN_OPTS }}
+            -Djava.awt.headless=true
           CAPTURE_BUILD_SCAN: true
         # Important: keep -pl ... in sync with "Calculate run flags"!
         # Despite the pre-calculated run_jvm flag, GIB has to be re-run here to figure out the exact submodules to build.
