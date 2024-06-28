@@ -1,0 +1,31 @@
+name: Quarkus CI
+
+on:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # this is important for GIB to work
+          fetch-depth: 0
+      - name: Generate .m2 cache key
+        id: m2-cache-key
+        run: |
+          echo "key=m2-cache-$(/bin/date -u "+%Y-%U")" >> $GITHUB_OUTPUT
+      - name: Cache Quarkus metadata
+        uses: actions/cache@v4
+        with:
+          path: 'foo.txt'
+          key: quarkus-metadata-${{ runner.os }}-${{ steps.m2-cache-key.outputs.key }}
+      - name: Cache Maven repository
+        run: |
+          if [ -f "foo.txt" ]; then
+            cat foo.txt
+          fi
