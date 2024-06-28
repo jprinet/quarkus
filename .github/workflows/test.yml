@@ -11,10 +11,6 @@ jobs:
   test-ubuntu:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          # this is important for GIB to work
-          fetch-depth: 0
       - name: Generate .m2 cache key
         id: m2-cache-key
         run: |
@@ -35,10 +31,6 @@ jobs:
   test-windows:
       runs-on: windows-latest
       steps:
-        - uses: actions/checkout@v4
-          with:
-            # this is important for GIB to work
-            fetch-depth: 0
         - name: Generate .m2 cache key
           id: m2-cache-key
           run: |
