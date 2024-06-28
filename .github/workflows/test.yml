@@ -29,3 +29,4 @@ jobs:
           if [ -f "foo.txt" ]; then
             cat foo.txt
           fi
+          echo $(/bin/date) > foo.txt
