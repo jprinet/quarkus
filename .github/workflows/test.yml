@@ -15,8 +15,9 @@ jobs:
         uses: actions/cache@v4
         with:
             path: 'foo.txt'
-            key: cache-test-${{ github.ref_name }}
-            restore-keys: cache-test-${{ github.event.repository.default_branch }}
+            key: cache-test
+#            key: cache-test-${{ github.ref_name }}
+#            restore-keys: cache-test-${{ github.event.repository.default_branch }}
       - name: Display file
         run: |
           if [ -f foo.txt ]; then
