@@ -86,23 +86,12 @@ jobs:
   ci-sanity-check:
     name: "CI Sanity Check"
     runs-on: ubuntu-latest
-    # Skip main in forks
-    if: "github.repository == 'quarkusio/quarkus' || !endsWith(github.ref, '/main')"
     steps:
       - name: Build
         run: sleep 30
   build-jdk17:
     name: "Initial JDK 17 Build"
     runs-on: ubuntu-latest
-    # Skip main in forks
-    # Skip draft PRs, rerun as soon as its removed
-    if: "(github.repository == 'quarkusio/quarkus' || !endsWith(github.ref, '/main')) && ( \
-           github.event_name != 'pull_request' || ( \
-             github.event.pull_request.draft == false && \
-             github.event.pull_request.state != 'closed' && \
-             github.event.action != 'edited' \
-           ) \
-         )"
     outputs:
       gib_args: ${{ steps.get-gib-args.outputs.gib_args }}
       gib_impacted: ${{ steps.get-gib-impacted.outputs.impacted_modules }}
@@ -228,8 +217,6 @@ jobs:
   calculate-test-jobs:
     name: Calculate Test Jobs
     runs-on: ubuntu-latest
-    # Skip main in forks
-    if: "github.repository == 'quarkusio/quarkus' || !endsWith(github.ref, '/main')"
     needs: build-jdk17
     env:
       GIB_IMPACTED_MODULES: ${{ needs.build-jdk17.outputs.gib_impacted }}
@@ -297,8 +284,6 @@ jobs:
     name: JVM Tests - JDK ${{matrix.java.name}}
     runs-on: ${{ matrix.java.os-name }}
     needs: [build-jdk17, calculate-test-jobs]
-    # Skip main in forks
-    if: "needs.calculate-test-jobs.outputs.run_jvm == 'true' && (github.repository == 'quarkusio/quarkus' || !endsWith(github.ref, '/main'))"
     timeout-minutes: 400
     env:
       MAVEN_OPTS: ${{ matrix.java.maven_opts }}
@@ -429,8 +414,6 @@ jobs:
     needs: [build-jdk17, calculate-test-jobs]
     env:
       MAVEN_OPTS: -Xmx2g -XX:MaxMetaspaceSize=1g
-    # Skip main in forks
-    if: "needs.calculate-test-jobs.outputs.run_maven == 'true' && (github.repository == 'quarkusio/quarkus' || !endsWith(github.ref, '/main'))"
     timeout-minutes: 130
     strategy:
       fail-fast: false
@@ -532,8 +515,6 @@ jobs:
     env:
       # leave more space for the actual gradle execution (which is just wrapped by maven)
       MAVEN_OPTS: -Xmx1g
-    # Skip main in forks
-    if: "needs.calculate-test-jobs.outputs.run_gradle == 'true' && (github.repository == 'quarkusio/quarkus' || !endsWith(github.ref, '/main'))"
     timeout-minutes: 120
     strategy:
       fail-fast: false
@@ -615,8 +596,6 @@ jobs:
     name: Devtools Tests - JDK ${{matrix.java.name}}
     runs-on: ${{matrix.java.os-name}}
     needs: [build-jdk17, calculate-test-jobs]
-    # Skip main in forks
-    if: "needs.calculate-test-jobs.outputs.run_devtools == 'true' && (github.repository == 'quarkusio/quarkus' || !endsWith(github.ref, '/main'))"
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -707,8 +686,6 @@ jobs:
     name: Kubernetes Tests - JDK ${{matrix.java.name}}
     runs-on: ${{matrix.java.os-name}}
     needs: [build-jdk17, calculate-test-jobs]
-    # Skip main in forks
-    if: "needs.calculate-test-jobs.outputs.run_kubernetes == 'true' && (github.repository == 'quarkusio/quarkus' || !endsWith(github.ref, '/main'))"
     timeout-minutes: 40
     strategy:
       fail-fast: false
@@ -799,8 +776,6 @@ jobs:
     name: Quickstarts Compilation - JDK ${{matrix.java.name}}
     runs-on: ${{matrix.java.os-name}}
     needs: [build-jdk17, calculate-test-jobs]
-    # Skip main in forks
-    if: "needs.calculate-test-jobs.outputs.run_quickstarts == 'true' && (github.repository == 'quarkusio/quarkus' || !endsWith(github.ref, '/main'))"
     timeout-minutes: 90
     strategy:
       fail-fast: false
@@ -883,8 +858,6 @@ jobs:
     name: Native Tests - Virtual Thread - ${{matrix.category}}
     runs-on: ${{matrix.os-name}}
     needs: [build-jdk17, calculate-test-jobs]
-    # Skip main in forks
-    if: "needs.calculate-test-jobs.outputs.virtual_threads_matrix != '{}' && (github.repository == 'quarkusio/quarkus' || !endsWith(github.ref, '/main'))"
     timeout-minutes: ${{matrix.timeout}}
     strategy:
       max-parallel: 12
@@ -955,8 +928,6 @@ jobs:
   tcks-test:
     name: MicroProfile TCKs Tests
     needs: [build-jdk17, calculate-test-jobs]
-    # Skip main in forks
-    if: "needs.calculate-test-jobs.outputs.run_tcks == 'true' && (github.repository == 'quarkusio/quarkus' || !endsWith(github.ref, '/main'))"
     runs-on: ubuntu-latest
     timeout-minutes: 150
     steps:
@@ -1040,8 +1011,6 @@ jobs:
     env:
       # leave more space for the actual native compilation and execution
       MAVEN_OPTS: -Xmx1g
-    # Skip main in forks
-    if: "needs.calculate-test-jobs.outputs.native_matrix != '{}' && (github.repository == 'quarkusio/quarkus' || !endsWith(github.ref, '/main'))"
     # Ignore the following YAML Schema error
     timeout-minutes: ${{matrix.timeout}}
     strategy:
