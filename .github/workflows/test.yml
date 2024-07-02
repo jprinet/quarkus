@@ -1,0 +1,30 @@
+name: Test
+
+on:
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+            path: 'foo.txt'
+            key: cache-test-${{ github.ref_name }}
+            restore-keys: cache-test-${{ github.event.repository.default_branch }}
+      - name: Display file
+        run: |
+          if [ -f foo.txt ]; then
+            echo "FOUND"
+            cat foo.txt
+          else
+            echo "NOT FOUND"
+          fi
+          echo "Hello World" > foo.txt
+          echo "cache-test-${{ github.ref_name }}" >> foo.txt
+
