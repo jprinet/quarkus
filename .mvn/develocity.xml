@@ -1,6 +1,7 @@
 <develocity>
     <server>
-        <url>https://ge.quarkus.io</url>
+        <url>https://ge.solutions-team.gradle.com</url>
+<!--        <url>https://ge.quarkus.io</url>-->
     </server>
     <buildScan>
         <!-- adjust conditions ?
