@@ -7,15 +7,15 @@
 
 echo "# df -h"
 df -h
-echo "# du -sh /"
-sudo du -sh /* || true
-echo "# du -sh /home/runner/work/quarkus/quarkus/integration-tests/*"
-sudo du -sh /home/runner/work/quarkus/quarkus/integration-tests/* || true
-echo "# docker images"
-docker images || true
-echo "# du -sh /var/lib/*"
-sudo du -sh /var/lib/* || true
-echo "# du -sh /opt/hostedtoolcache/*"
-sudo du -sh /opt/hostedtoolcache/* || true
-echo "# du -sh /imagegeneration/installers/*"
-sudo du -sh /imagegeneration/installers/* || true
+#echo "# du -sh /"
+#sudo du -sh /* || true
+#echo "# du -sh /home/runner/work/quarkus/quarkus/integration-tests/*"
+#sudo du -sh /home/runner/work/quarkus/quarkus/integration-tests/* || true
+#echo "# docker images"
+#docker images || true
+#echo "# du -sh /var/lib/*"
+#sudo du -sh /var/lib/* || true
+#echo "# du -sh /opt/hostedtoolcache/*"
+#sudo du -sh /opt/hostedtoolcache/* || true
+#echo "# du -sh /imagegeneration/installers/*"
+#sudo du -sh /imagegeneration/installers/* || true
