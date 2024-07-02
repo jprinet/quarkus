@@ -11,7 +11,7 @@
 [![Develocity](https://img.shields.io/badge/Revved%20up%20by-Develocity-06A0CE?style=for-the-badge&logo=gradle)](https://ge.quarkus.io/scans)
 [![GitHub Repo stars](https://img.shields.io/github/stars/quarkusio/quarkus?style=for-the-badge)](https://github.com/quarkusio/quarkus/stargazers)
 
-# Quarkus - Supersonic Subatomic Java
+# Quarkus - Supersonic Subatomic Java - foo
 
 Quarkus is a Cloud Native, (Linux) Container First framework for writing Java applications.
 
