@@ -93,13 +93,13 @@ jobs:
       - name: Verify virtual-threads-tests.json
         run: ./.github/verify-tests-json.sh virtual-threads-tests.json integration-tests/virtual-threads/
       - name: Setup Develocity Build Scan capture
-        uses: gradle/develocity-actions/maven-setup@v0.0.1
+        uses: gradle/develocity-actions/maven-setup@v1.1
         with:
           capture-strategy: ON_DEMAND
           job-name: "Initial JDK 17 Build"
           add-pr-comment: false
           add-job-summary: false
-          develocity-access-key: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
+#          develocity-access-key: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
       - name: Build
         id: foo
         env:
@@ -295,7 +295,7 @@ jobs:
                 distribution: temurin
                 java-version: ${{ matrix.java.java-version }}
           - name: Setup Develocity Build Scan capture
-            uses: gradle/develocity-actions/maven-setup@v0.0.1
+            uses: gradle/develocity-actions/maven-setup@v1.1
             with:
                 capture-strategy: ON_DEMAND
                 job-name: "Kubernetes Tests - JDK ${{matrix.java.name}}"
