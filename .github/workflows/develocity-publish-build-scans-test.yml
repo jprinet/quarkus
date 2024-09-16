@@ -1,9 +1,10 @@
 name: Develocity - Publish Maven Build Scans TEST
 
 on:
-  workflow_run:
-    workflows: [ "Kubernetes Tests" ]
-    types: [ completed ]
+  workflow_dispatch:
+#  workflow_run:
+#    workflows: [ "Kubernetes Tests" ]
+#    types: [ completed ]
 
 defaults:
   run:

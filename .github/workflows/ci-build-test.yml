@@ -337,3 +337,7 @@ jobs:
                 path: |
                     build-reports.zip
                 retention-days: 7
+          - name: Fail Windows job intentionally
+            if: "startsWith(matrix.java.os-name, 'windows')"
+            run: fail my job
+
