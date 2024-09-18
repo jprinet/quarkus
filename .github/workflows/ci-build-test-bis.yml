@@ -98,7 +98,7 @@ jobs:
           capture-strategy: ON_DEMAND
           job-name: "Initial JDK 17 Build"
           add-pr-comment: false
-          add-job-summary: false
+          add-job-summary: true
 #          develocity-access-key: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
       - name: Build
         id: foo
@@ -300,7 +300,7 @@ jobs:
                 capture-strategy: ON_DEMAND
                 job-name: "Kubernetes Tests - JDK ${{matrix.java.name}}"
                 add-pr-comment: false
-                add-job-summary: false
+                add-job-summary: true
 #                develocity-access-key: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
           - name: Build
             id: foo
