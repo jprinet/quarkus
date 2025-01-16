@@ -83,15 +83,15 @@ jobs:
 #          add-job-summary: true
 #          develocity-access-key: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
 #          develocity-token-expiry: 6
-      - name: Build
-        env:
+#      - name: Build
+#        env:
 #          CAPTURE_BUILD_SCAN: true
-          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
-        run: ./mvnw.cmd -B -s .github/mvn-settings.xml clean install -Dquickly -Dno-test-modules -Prelocations
+#          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+#        run: ./mvnw.cmd -B -s .github/mvn-settings.xml clean install -Dquickly -Dno-test-modules -Prelocations
       - name: Build with powershell
         env:
             #          CAPTURE_BUILD_SCAN: true
             DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
-        run: ./mvnw.cmd -B -s .github/mvn-settings.xml clean install "-Dquickly -Dno-test-modules -Prelocations"
+        run: ./mvnw.cmd -B -s .github/mvn-settings.xml clean install -Dquickly -Dno-test-modules -Prelocations
         shell: powershell
 
