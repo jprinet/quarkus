@@ -1,6 +1,6 @@
 <develocity>
     <server>
-        <url>https://ge.quarkus.io</url>
+        <url>https://ge.solutions-team.gradle.com</url>
     </server>
     <buildScan>
         <!-- adjust conditions ?
@@ -22,11 +22,11 @@
     </buildScan>
     <buildCache>
         <local>
-            <enabled>#{env['RELEASE_GITHUB_TOKEN'] == null and properties['no-build-cache'] == null}</enabled>
+            <enabled>false</enabled>
         </local>
         <remote>
-            <enabled>#{env['RELEASE_GITHUB_TOKEN'] == null and properties['no-build-cache'] == null}</enabled>
-            <storeEnabled>#{env['CI'] != null and env['DEVELOCITY_ACCESS_KEY'] != null and env['DEVELOCITY_ACCESS_KEY'] != '' and env['RELEASE_GITHUB_TOKEN'] == null}</storeEnabled>
+            <enabled>true</enabled>
+            <storeEnabled>#{env['CI'] != null}</storeEnabled>
         </remote>
     </buildCache>
 </develocity>

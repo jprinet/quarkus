@@ -1,0 +1,91 @@
+name: Quarkus CI
+
+on:
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+  workflow_dispatch:
+
+env:
+  # Workaround testsuite locale issue
+  LANG: en_US.UTF-8
+  COMMON_MAVEN_ARGS: "-e -B --settings .github/mvn-settings.xml --fail-at-end"
+  COMMON_TEST_MAVEN_ARGS: "-Dformat.skip -Denforcer.skip -DskipDocs -Dforbiddenapis.skip -DskipExtensionValidation -DskipCodestartValidation"
+  NATIVE_TEST_MAVEN_ARGS: "-Dtest-containers -Dstart-containers -Dquarkus.native.native-image-xmx=6g -Dnative -Dnative.surefire.skip -Dno-descriptor-tests clean install -DskipDocs"
+  JVM_TEST_MAVEN_ARGS: "-Dtest-containers -Dstart-containers -Dquarkus.test.hang-detection-timeout=60"
+  PTS_MAVEN_ARGS: "-Ddevelocity.pts.enabled=${{ github.event_name == 'pull_request' && github.base_ref == 'main' && 'true' || 'false' }}"
+  DB_USER: hibernate_orm_test
+  DB_PASSWORD: hibernate_orm_test
+  DB_NAME: hibernate_orm_test
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  jvm-tests:
+    name: JVM Tests - JDK 17
+    runs-on: windows-latest
+    timeout-minutes: 400
+    env:
+      MAVEN_OPTS: "-Xmx2g -XX:MaxMetaspaceSize=1g"
+      JAVA_VERSION_GRADLE: 17
+
+    steps:
+      - name: Gradle Enterprise environment
+        run: |
+          echo "GE_TAGS=jdk-17" >> "$GITHUB_ENV"
+          echo "GE_CUSTOM_VALUES=gh-job-name=JVM Tests - JDK 17" >> "$GITHUB_ENV"
+      - name: Support longpaths on Windows
+        run: git config --global core.longpaths true
+      - uses: actions/checkout@v4
+        with:
+          # this is important for GIB to work
+          fetch-depth: 0
+      - name: Set up JDK 17 for Gradle
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+#          architecture: ${{ matrix.java.architecture || 'x64' }}
+      - name: Generate cache key
+        id: cache-key
+        run: |
+            CURRENT_BRANCH="${{ github.repository != 'quarkusio/quarkus' && 'fork' || github.base_ref || github.ref_name }}"
+            CURRENT_MONTH=$(/bin/date -u "+%Y-%m")
+            CURRENT_DAY=$(/bin/date -u "+%d")
+            ROOT_CACHE_KEY="m2-cache"
+            echo "m2-monthly-cache-key=${ROOT_CACHE_KEY}-${CURRENT_MONTH}" >> $GITHUB_OUTPUT
+            echo "m2-monthly-branch-cache-key=${ROOT_CACHE_KEY}-${CURRENT_MONTH}-${CURRENT_BRANCH}" >> $GITHUB_OUTPUT
+            echo "m2-cache-key=${ROOT_CACHE_KEY}-${CURRENT_MONTH}-${CURRENT_BRANCH}-${CURRENT_DAY}" >> $GITHUB_OUTPUT
+            CURRENT_WEEK=$(/bin/date -u "+%Y-%U")
+            echo "quarkus-metadata-cache-key=quarkus-metadata-cache-${CURRENT_WEEK}-${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            echo "quarkus-metadata-cache-key-default=quarkus-metadata-cache-${CURRENT_WEEK}-${{ github.event.repository.default_branch }}" >> $GITHUB_OUTPUT
+      - name: Cache Maven Repository
+        id: cache-maven
+        uses: actions/cache@v4
+        with:
+            path: ~/.m2/repository
+            # A new cache will be stored daily. After that first store of the day, cache save actions will fail because the cache is immutable but it's not a problem.
+            # The whole cache is dropped monthly to prevent unlimited growth.
+            # The cache is per branch but in case we don't find a branch for a given branch, we will get a cache from another branch.
+            key: ${{ steps.cache-key.outputs.m2-cache-key }}
+            restore-keys: |
+                ${{ steps.cache-key.outputs.m2-monthly-branch-cache-key }}-
+                ${{ steps.cache-key.outputs.m2-monthly-cache-key }}-
+
+#      - name: Setup Develocity Build Scan capture
+#        uses: gradle/develocity-actions/setup-maven@v1.3
+#        with:
+#          capture-strategy: ON_DEMAND
+#          job-name: "JVM Tests - JDK 17"
+#          add-pr-comment: false
+#          add-job-summary: true
+#          develocity-access-key: ${{ secrets.GRADLE_ENTERPRISE_ACCESS_KEY }}
+#          develocity-token-expiry: 6
+      - name: Build
+        env:
+#          CAPTURE_BUILD_SCAN: true
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+        run: ./mvnw.cmd -B -s .github/mvn-settings.xml clean install -Dquickly -Dno-test-modules -Prelocations
+
