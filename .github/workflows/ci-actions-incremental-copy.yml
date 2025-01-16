@@ -88,4 +88,10 @@ jobs:
 #          CAPTURE_BUILD_SCAN: true
           DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
         run: ./mvnw.cmd -B -s .github/mvn-settings.xml clean install -Dquickly -Dno-test-modules -Prelocations
+      - name: Build with powershell
+        env:
+            #          CAPTURE_BUILD_SCAN: true
+            DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
+        run: ./mvnw.cmd -B -s .github/mvn-settings.xml clean install "-Dquickly -Dno-test-modules -Prelocations"
+        shell: powershell
 
