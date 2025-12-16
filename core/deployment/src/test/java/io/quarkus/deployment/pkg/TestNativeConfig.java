@@ -26,6 +26,11 @@ public class TestNativeConfig implements NativeConfig {
         return true;
     }
 
+    @Override
+    public boolean dryRun() {
+        return false;
+    }
+
     public boolean sourcesOnly() {
         return true;
     }

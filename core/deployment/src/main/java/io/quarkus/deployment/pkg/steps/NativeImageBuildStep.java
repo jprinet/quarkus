@@ -288,36 +288,41 @@ public class NativeImageBuildStep {
             } catch (Throwable t) {
                 throw imageGenerationFailed(t, isContainerBuild);
             }
-            IoUtils.copy(generatedExecutablePath, finalExecutablePath);
-            Files.delete(generatedExecutablePath);
-            if (nativeConfig.debug().enabled()) {
-                final String symbolsName = String.format("%s.debug", nativeImageName);
-                Path generatedSymbols = outputDir.resolve(symbolsName);
-                if (generatedSymbols.toFile().exists()) {
-                    Path finalSymbolsPath = outputTargetBuildItem.getOutputDirectory().resolve(symbolsName);
-                    IoUtils.copy(generatedSymbols, finalSymbolsPath);
-                    Files.delete(generatedSymbols);
-                }
-            }
 
-            // See https://github.com/oracle/graal/issues/4921
-            try (DirectoryStream<Path> sharedLibs = Files.newDirectoryStream(outputDir, "*.{so,dll}")) {
-                sharedLibs.forEach(src -> {
-                    Path dst = null;
-                    try {
-                        dst = Path.of(outputTargetBuildItem.getOutputDirectory().toAbsolutePath().toString(),
-                                src.getFileName().toString());
-                        log.debugf("Copying a shared lib from %s to %s.", src, dst);
-                        Files.copy(src, dst, StandardCopyOption.REPLACE_EXISTING);
-                    } catch (IOException e) {
-                        log.errorf("Could not copy shared lib from %s to %s. Continuing. Error: %s", src, dst, e);
+            if (!nativeConfig.dryRun()) {
+                IoUtils.copy(generatedExecutablePath, finalExecutablePath);
+                Files.delete(generatedExecutablePath);
+                if (nativeConfig.debug().enabled()) {
+                    final String symbolsName = String.format("%s.debug", nativeImageName);
+                    Path generatedSymbols = outputDir.resolve(symbolsName);
+                    if (generatedSymbols.toFile().exists()) {
+                        Path finalSymbolsPath = outputTargetBuildItem.getOutputDirectory().resolve(symbolsName);
+                        IoUtils.copy(generatedSymbols, finalSymbolsPath);
+                        Files.delete(generatedSymbols);
                     }
-                });
-            } catch (IOException e) {
-                log.errorf("Could not list files in directory %s. Continuing. Error: %s", outputDir, e);
-            }
+                }
 
-            System.setProperty("native.image.path", finalExecutablePath.toAbsolutePath().toString());
+                // See https://github.com/oracle/graal/issues/4921
+                try (DirectoryStream<Path> sharedLibs = Files.newDirectoryStream(outputDir, "*.{so,dll}")) {
+                    sharedLibs.forEach(src -> {
+                        Path dst = null;
+                        try {
+                            dst = Path.of(outputTargetBuildItem.getOutputDirectory().toAbsolutePath().toString(),
+                                    src.getFileName().toString());
+                            log.debugf("Copying a shared lib from %s to %s.", src, dst);
+                            Files.copy(src, dst, StandardCopyOption.REPLACE_EXISTING);
+                        } catch (IOException e) {
+                            log.errorf("Could not copy shared lib from %s to %s. Continuing. Error: %s", src, dst, e);
+                        }
+                    });
+                } catch (IOException e) {
+                    log.errorf("Could not list files in directory %s. Continuing. Error: %s", outputDir, e);
+                }
+
+                System.setProperty("native.image.path", finalExecutablePath.toAbsolutePath().toString());
+            } else {
+                log.info("Dry run build");
+            }
 
             return new NativeImageBuildItem(finalExecutablePath,
                     new NativeImageBuildItem.GraalVMVersion(graalVMVersion.getFullVersion(),
@@ -910,6 +915,9 @@ public class NativeImageBuildStep {
                 }
                 if (!pie.isEmpty()) {
                     nativeImageArgs.add("-H:NativeLinkerOption=" + pie);
+                }
+                if (nativeConfig.dryRun()) {
+                    nativeImageArgs.add("--bundle-create=bundle.nib,dry-run");
                 }
 
                 if (!nativeConfig.enableIsolates()) {

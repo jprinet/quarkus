@@ -31,6 +31,13 @@ public interface NativeConfig {
     boolean enabled();
 
     /**
+     * Set to enable native-image dry run build using GraalVM.
+     * This configuration is intended for native image bundle generation only, skipping the actual native image build.
+     */
+    @WithDefault("false")
+    boolean dryRun();
+
+    /**
      * Set to prevent the native-image process from actually building the native image.
      */
     @WithDefault("false")
