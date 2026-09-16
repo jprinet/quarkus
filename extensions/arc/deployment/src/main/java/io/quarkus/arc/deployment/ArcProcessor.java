@@ -8,12 +8,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -122,6 +124,18 @@ import io.quarkus.smallrye.context.deployment.spi.ThreadContextProviderBuildItem
 public class ArcProcessor {
 
     private static final Logger LOGGER = Logger.getLogger(ArcProcessor.class);
+
+    private static final Comparator<ReflectiveMethodBuildItem> REFLECTIVE_METHOD_COMPARATOR = Comparator
+            .comparing(ReflectiveMethodBuildItem::getDeclaringClass)
+            .thenComparing(ReflectiveMethodBuildItem::getName)
+            .thenComparing(ReflectiveMethodBuildItem::getParams, Arrays::compare);
+
+    private static final Comparator<ReflectiveFieldBuildItem> REFLECTIVE_FIELD_COMPARATOR = Comparator
+            .comparing(ReflectiveFieldBuildItem::getDeclaringClass)
+            .thenComparing(ReflectiveFieldBuildItem::getName);
+
+    private static final Comparator<ReflectiveClassBuildItem> REFLECTIVE_CLASS_COMPARATOR = Comparator
+            .comparing(i -> String.join(",", i.getClassNames()));
 
     static final DotName ADDITIONAL_BEAN = DotName.createSimple(AdditionalBean.class.getName());
     static final DotName ASYNC_OBSERVER_EXCEPTION_HANDLER = DotName.createSimple(AsyncObserverExceptionHandler.class.getName());
@@ -532,32 +546,38 @@ public class ArcProcessor {
                 .parseBoolean(System.getProperty("quarkus.arc.parallel-resource-generation", "true"));
         long start = System.nanoTime();
         ExecutorService executor = parallelResourceGeneration ? buildExecutor : null;
+        // The callbacks below are invoked from the threads generating the bean resources, so the order in which they
+        // fire depends on thread scheduling. Collect the registrations and produce them sorted once the generation is
+        // over, otherwise reflect-config.json differs between two builds of the same application.
+        Collection<ReflectiveMethodBuildItem> registeredMethods = new ConcurrentLinkedQueue<>();
+        Collection<ReflectiveFieldBuildItem> registeredFields = new ConcurrentLinkedQueue<>();
+        Collection<ReflectiveClassBuildItem> registeredClasses = new ConcurrentLinkedQueue<>();
+
         List<ResourceOutput.Resource> resources;
         resources = beanProcessor.generateResources(new ReflectionRegistration() {
 
             @Override
             public void registerMethod(String declaringClass, String name, String... params) {
-                reflectiveMethods.produce(new ReflectiveMethodBuildItem(getClass().getName(), declaringClass, name, params));
+                registeredMethods.add(new ReflectiveMethodBuildItem(getClass().getName(), declaringClass, name, params));
             }
 
             @Override
             public void registerMethod(MethodInfo methodInfo) {
-                reflectiveMethods.produce(new ReflectiveMethodBuildItem(getClass().getName(), methodInfo));
+                registeredMethods.add(new ReflectiveMethodBuildItem(getClass().getName(), methodInfo));
             }
 
             @Override
             public void registerField(FieldInfo fieldInfo) {
-                reflectiveFields.produce(new ReflectiveFieldBuildItem(getClass().getName(), fieldInfo));
+                registeredFields.add(new ReflectiveFieldBuildItem(getClass().getName(), fieldInfo));
             }
 
             @Override
             public void registerClientProxy(DotName beanClassName, String clientProxyName) {
                 if (reflectiveBeanClassesNames.contains(beanClassName)) {
                     // Fields should never be registered for client proxies
-                    reflectiveClasses
-                            .produce(ReflectiveClassBuildItem.builder(clientProxyName)
-                                    .reason(getClass().getName())
-                                    .methods().build());
+                    registeredClasses.add(ReflectiveClassBuildItem.builder(clientProxyName)
+                            .reason(getClass().getName())
+                            .methods().build());
                 }
             }
 
@@ -565,15 +585,18 @@ public class ArcProcessor {
             public void registerSubclass(DotName beanClassName, String subclassName) {
                 if (reflectiveBeanClassesNames.contains(beanClassName)) {
                     // Fields should never be registered for subclasses
-                    reflectiveClasses
-                            .produce(ReflectiveClassBuildItem.builder(subclassName)
-                                    .reason(getClass().getName())
-                                    .methods().build());
+                    registeredClasses.add(ReflectiveClassBuildItem.builder(subclassName)
+                            .reason(getClass().getName())
+                            .methods().build());
                 }
             }
 
         }, existingClasses.existingClasses, bytecodeTransformerConsumer,
                 config.shouldEnableBeanRemoval() && config.detectUnusedFalsePositives(), executor);
+
+        registeredMethods.stream().sorted(REFLECTIVE_METHOD_COMPARATOR).forEach(reflectiveMethods::produce);
+        registeredFields.stream().sorted(REFLECTIVE_FIELD_COMPARATOR).forEach(reflectiveFields::produce);
+        registeredClasses.stream().sorted(REFLECTIVE_CLASS_COMPARATOR).forEach(reflectiveClasses::produce);
 
         for (ResourceOutput.Resource resource : resources) {
             switch (resource.getType()) {
