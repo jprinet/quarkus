@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1009,10 +1010,14 @@ public class SmallRyeOpenApiProcessor {
                     httpRootPathBuildItem,
                     operationHandler);
 
-            Map.<String, Supplier<String>> of(//
-                    "JSON", openAPI::toJSON, //
-                    "YAML", openAPI::toYAML //
-            ).forEach((key, value) -> {
+            // Map.of() iteration order is randomized per JVM, so the two documents - and the resources registered
+            // for them - would be produced in a different order on every build, which ends up in resource-config.json
+            // and in the order of the entries of the runner jar.
+            Map<String, Supplier<String>> documents = new LinkedHashMap<>();
+            documents.put("JSON", openAPI::toJSON);
+            documents.put("YAML", openAPI::toYAML);
+
+            documents.forEach((key, value) -> {
                 String name = OpenApiConstants.BASE_NAME;
                 if (!SmallRyeOpenApiConfig.DEFAULT_DOCUMENT_NAME.equals(documentName)) {
                     name += "-" + documentName;
