@@ -337,7 +337,10 @@ public class ConfigGenerationBuildStep {
             BuildProducer<ReflectiveClassBuildItem> reflectiveClasses,
             BuildProducer<ReflectiveMethodBuildItem> reflectiveMethods) {
 
-        Map<Class<?>, ConfigClassImplementation> elements = new HashMap<>();
+        // Class does not override hashCode(), so the iteration order of a map keyed by Class varies between JVM runs.
+        // Keep the entries sorted so that the generated classes and the reflection registrations below - and thus the
+        // runner jar and reflect-config.json - are the same for every build of the same application.
+        Map<Class<?>, ConfigClassImplementation> elements = new TreeMap<>(Comparator.comparing(Class::getName));
         for (GeneratedConfigClassBuildItem generatedConfigClass : generatedConfigClasses) {
             elements.putAll(generatedConfigClass.getElements());
         }
