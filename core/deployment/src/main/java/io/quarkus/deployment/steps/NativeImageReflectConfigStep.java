@@ -3,12 +3,15 @@ package io.quarkus.deployment.steps;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import io.quarkus.bootstrap.json.Json;
 import io.quarkus.bootstrap.json.Json.JsonArrayBuilder;
@@ -27,6 +30,14 @@ import io.quarkus.deployment.pkg.steps.NativeOrNativeSourcesBuild;
 
 public class NativeImageReflectConfigStep {
 
+    /**
+     * Consistent with {@link ReflectiveMethodBuildItem#equals(Object)}, which compares exactly these three components.
+     */
+    private static final Comparator<ReflectiveMethodBuildItem> METHOD_COMPARATOR = Comparator
+            .comparing(ReflectiveMethodBuildItem::getDeclaringClass)
+            .thenComparing(ReflectiveMethodBuildItem::getName)
+            .thenComparing(ReflectiveMethodBuildItem::getParams, Arrays::compare);
+
     @BuildStep(onlyIf = NativeOrNativeSourcesBuild.class)
     void generateReflectConfig(BuildProducer<GeneratedResourceBuildItem> reflectConfig,
             NativeConfig nativeConfig,
@@ -37,7 +48,10 @@ public class NativeImageReflectConfigStep {
             List<ServiceProviderBuildItem> serviceProviderBuildItems,
             List<ReflectiveClassConditionBuildItem> reflectiveClassConditionBuildItems) {
 
-        final Map<String, ReflectionInfo> reflectiveClasses = new LinkedHashMap<>();
+        // Build steps run concurrently, so the injected lists arrive in a different order on every build. Sorting
+        // here keeps reflect-config.json byte-identical across builds of identical sources. native-image treats
+        // these entries as a set, so the order carries no meaning.
+        final Map<String, ReflectionInfo> reflectiveClasses = new TreeMap<>();
         final Set<String> forcedNonWeakClasses = new HashSet<>();
         for (ForceNonWeakReflectiveClassBuildItem nonWeakReflectiveClassBuildItem : nonWeakReflectiveClassBuildItems) {
             forcedNonWeakClasses.add(nonWeakReflectiveClassBuildItem.getClassName());
@@ -189,7 +203,7 @@ public class NativeImageReflectConfigStep {
         String reason = methodInfo.getReason();
         if (reason != null) {
             if (existing.reasons == null) {
-                existing.reasons = new HashSet<>();
+                existing.reasons = new TreeSet<>();
             }
             existing.reasons.add(reason);
         }
@@ -235,7 +249,7 @@ public class NativeImageReflectConfigStep {
                 }
                 if (classBuildItem.getReason() != null) {
                     if (existing.reasons == null) {
-                        existing.reasons = new HashSet<>();
+                        existing.reasons = new TreeSet<>();
                     }
                     existing.reasons.add(classBuildItem.getReason());
                 }
@@ -253,7 +267,7 @@ public class NativeImageReflectConfigStep {
         String reason = fieldInfo.getReason();
         if (reason != null) {
             if (existing.reasons == null) {
-                existing.reasons = new HashSet<>();
+                existing.reasons = new TreeSet<>();
             }
             existing.reasons.add(reason);
         }
@@ -272,10 +286,10 @@ public class NativeImageReflectConfigStep {
         boolean unsafeAllocated;
         Set<String> reasons = null;
         String typeReachable;
-        Set<String> fieldSet = new HashSet<>();
-        Set<ReflectiveMethodBuildItem> methodSet = new HashSet<>();
-        Set<ReflectiveMethodBuildItem> queriedMethodSet = new HashSet<>();
-        Set<ReflectiveMethodBuildItem> ctorSet = new HashSet<>();
+        Set<String> fieldSet = new TreeSet<>();
+        Set<ReflectiveMethodBuildItem> methodSet = new TreeSet<>(METHOD_COMPARATOR);
+        Set<ReflectiveMethodBuildItem> queriedMethodSet = new TreeSet<>(METHOD_COMPARATOR);
+        Set<ReflectiveMethodBuildItem> ctorSet = new TreeSet<>(METHOD_COMPARATOR);
 
         private ReflectionInfo() {
         }
@@ -293,7 +307,7 @@ public class NativeImageReflectConfigStep {
             this.serialization = classBuildItem.isSerialization();
             this.unsafeAllocated = classBuildItem.isUnsafeAllocated();
             if (classBuildItem.getReason() != null) {
-                reasons = new HashSet<>();
+                reasons = new TreeSet<>();
                 reasons.add(classBuildItem.getReason());
             }
         }

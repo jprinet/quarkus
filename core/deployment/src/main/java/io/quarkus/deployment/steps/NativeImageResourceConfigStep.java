@@ -3,6 +3,8 @@ package io.quarkus.deployment.steps;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -28,38 +30,49 @@ public class NativeImageResourceConfigStep {
             List<ServiceProviderBuildItem> serviceProviderBuildItems) {
         JsonObjectBuilder root = Json.object();
 
-        JsonObjectBuilder resourcesJs = Json.object();
-        JsonArrayBuilder includes = Json.array();
+        // Build steps run concurrently, so the injected lists arrive in a different order on every build. Sorting
+        // the patterns and bundle names keeps resource-config.json byte-identical across builds of identical
+        // sources; native-image applies them as a set, so the order carries no meaning.
+        List<String> includePatterns = new ArrayList<>();
 
         for (NativeImageResourceBuildItem i : resources) {
             for (String path : i.getResources()) {
-                JsonObjectBuilder pat = Json.object();
-                pat.put("pattern", Pattern.quote(path));
-                includes.add(pat);
+                includePatterns.add(Pattern.quote(path));
             }
         }
 
         for (ServiceProviderBuildItem i : serviceProviderBuildItems) {
-            includes.add(Json.object().put("pattern", Pattern.quote(i.serviceDescriptorFile())));
+            includePatterns.add(Pattern.quote(i.serviceDescriptorFile()));
         }
 
         for (NativeImageResourcePatternsBuildItem resourcePatternsItem : resourcePatterns) {
-            addListToJsonArray(includes, resourcePatternsItem.getIncludePatterns());
+            includePatterns.addAll(resourcePatternsItem.getIncludePatterns());
+        }
+        Collections.sort(includePatterns);
+
+        JsonObjectBuilder resourcesJs = Json.object();
+        JsonArrayBuilder includes = Json.array();
+        for (String includePattern : includePatterns) {
+            includes.add(Json.object().put("pattern", includePattern));
         }
         resourcesJs.put("includes", includes);
         root.put("resources", resourcesJs);
 
-        JsonArrayBuilder bundles = Json.array();
+        List<String> bundleNames = new ArrayList<>();
         for (NativeImageResourceBundleBuildItem i : resourceBundles) {
-            JsonObjectBuilder bundle = Json.object();
             String moduleName = i.getModuleName();
             StringBuilder sb = new StringBuilder();
             if (moduleName != null) {
                 sb.append(moduleName).append(":");
             }
             sb.append(i.getBundleName().replace("/", "."));
-            bundle.put("name", sb.toString());
-            bundles.add(bundle);
+            bundleNames.add(sb.toString());
+        }
+        Collections.sort(bundleNames);
+
+        JsonArrayBuilder bundles = Json.array();
+        for (String bundleName : bundleNames) {
+            bundles.add(Json.object().put("name", bundleName));
         }
         root.put("bundles", bundles);
 
@@ -69,14 +82,6 @@ public class NativeImageResourceConfigStep {
                     writer.toString().getBytes(StandardCharsets.UTF_8)));
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private void addListToJsonArray(JsonArrayBuilder array, List<String> patterns) {
-        for (String pattern : patterns) {
-            JsonObjectBuilder pat = Json.object();
-            pat.put("pattern", pattern);
-            array.add(pat);
         }
     }
 }

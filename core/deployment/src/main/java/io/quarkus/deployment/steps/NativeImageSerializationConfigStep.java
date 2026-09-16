@@ -3,10 +3,11 @@ package io.quarkus.deployment.steps;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import io.quarkus.bootstrap.json.Json;
 import io.quarkus.bootstrap.json.Json.JsonArrayBuilder;
@@ -25,7 +26,10 @@ public class NativeImageSerializationConfigStep {
             List<ReflectiveClassBuildItem> reflectiveClassBuildItems,
             List<LambdaCapturingTypeBuildItem> lambdaCapturingTypeBuildItems) {
 
-        final Set<String> serializableClasses = new HashSet<>();
+        // Build steps run concurrently, so the injected lists arrive in a different order on every build. Sorting
+        // keeps serialization-config.json byte-identical across builds of identical sources; native-image treats
+        // these entries as a set, so the order carries no meaning.
+        final Set<String> serializableClasses = new TreeSet<>();
         for (ReflectiveClassBuildItem i : reflectiveClassBuildItems) {
             if (i.isSerialization()) {
                 String[] classNames = i.getClassNames().toArray(new String[0]);
@@ -40,11 +44,15 @@ public class NativeImageSerializationConfigStep {
         }
         root.put("types", types);
 
+        List<String> lambdaCapturingTypeNames = new ArrayList<>();
+        for (LambdaCapturingTypeBuildItem i : lambdaCapturingTypeBuildItems) {
+            lambdaCapturingTypeNames.add(i.getClassName());
+        }
+        Collections.sort(lambdaCapturingTypeNames);
+
         JsonArrayBuilder lambdaCapturingTypes = Json.array();
-        if (!lambdaCapturingTypeBuildItems.isEmpty()) {
-            for (LambdaCapturingTypeBuildItem i : lambdaCapturingTypeBuildItems) {
-                lambdaCapturingTypes.add(Json.object().put("name", i.getClassName()));
-            }
+        for (String lambdaCapturingTypeName : lambdaCapturingTypeNames) {
+            lambdaCapturingTypes.add(Json.object().put("name", lambdaCapturingTypeName));
         }
         root.put("lambdaCapturingTypes", lambdaCapturingTypes);
 
