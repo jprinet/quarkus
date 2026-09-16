@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -328,6 +329,12 @@ public class BeanDeployment {
     void init(Consumer<BytecodeTransformer> bytecodeTransformerConsumer,
             List<Predicate<BeanInfo>> additionalUnusedBeanExclusions) {
         long start = System.nanoTime();
+
+        // Synthetic beans are registered by build steps that may run concurrently, so the order in which they were
+        // added to the list depends on thread scheduling and varies between builds. Sort them by their identifier,
+        // which is stable for a given bean, so that everything derived from the bean order below - down to the
+        // generated classes and the reflection registrations - is the same for every build of the same application.
+        syntheticBeans.sort(Comparator.comparing(BeanInfo::getIdentifier));
 
         initObserverAndProducerMethods(observers, beansView);
 
